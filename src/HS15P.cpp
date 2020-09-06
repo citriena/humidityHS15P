@@ -1,31 +1,31 @@
 /*********************************************************************
 
- HS15P���g�������x����pArduino���C�u����
+ HS15Pを使った湿度測定用Arduinoライブラリ
  
- �{���C�u�����̓��C�Z���X�t���[�ł��B
+ 本ライブラリはライセンスフリーです。
 
                                (c) 2020 citriena
                                https://github.com/citriena/hs15p
 
-�Ĕz�z�ɂ��Ă͉��L�̒���҂̏����𓾂�K�v������܂��B
-�i�{�\�t�g�E�F�A�̎��x�Z���THS15P���胋�[�`���͉��L�̌������ʂ���ɂ��Ă��܂��j
+再配布については下記の著作者の承諾を得る必要があります。
+（本ソフトウェアの湿度センサHS15P測定ルーチンは下記の検討結果を基にしています）
 
-    HS15P ���x�Z���T�[�̊ȈՓ������
-    �n�g ��
+    HS15P 湿度センサーの簡易動作実験
+    渡波 郁
     http://siesta.la.coocan.jp/zk/hs15/hs15.html
 	
 
-�Q�l����
+参考資料
 
-�{���C�u�����J���̂��߂ɉ��L�̎������Q�l�ɂ��܂����B
+本ライブラリ開発のために下記の資料を参考にしました。
 
-�EHS15P ���x�Z���T�[�̊ȈՓ������
+・HS15P 湿度センサーの簡易動作実験
   http://siesta.la.coocan.jp/zk/hs15/hs15.html
 
-�EHS15P ���x�Z���T�[�̊ȈՓ������ Arduino��
+・HS15P 湿度センサーの簡易動作実験 Arduino版
   http://siesta.la.coocan.jp/zk/hs15/hs15_arduino.html
 
-�EArduino�����x���胍�K�[�E���x�Z���T�[�̔�r
+・Arduino温湿度測定ロガー・湿度センサーの比較
   https://bokunimo.net/arduino/humidity.html
 
 *********************************************************************/
@@ -36,20 +36,21 @@
 
 
 ///////////////////////////////////////////////
-//  �R���X�g���N�^
+//  コンストラクタ
 ///////////////////////////////////////////////
 
-HS15P::HS15P(int vfPin, int vrPin, int vaPin) :
+HS15P::HS15P(int vfPin, int vrPin, int vaPin, int vdPin) :
   _vfPin(vfPin), 
   _vrPin(vrPin),
-  _vaPin(vaPin)
+  _vaPin(vaPin),
+  _vdPin(vdPin)
 {
   _hs15pFactor = HS15P_FACTOR;
 }
 
 
 ///////////////////////////////////////////////
-//  �̕␳�pfactor�l�̐ݒ�
+//  個体補正用factor値の設定
 ///////////////////////////////////////////////
 
 void HS15P::setFactor(float factor) {
@@ -58,7 +59,7 @@ void HS15P::setFactor(float factor) {
 
 
 ///////////////////////////////////////////////
-//  �̕␳�pfactor�l�̎擾
+//  個体補正用factor値の取得
 ///////////////////////////////////////////////
 
 float HS15P::getFactor() {
@@ -67,7 +68,7 @@ float HS15P::getFactor() {
 
 
 ///////////////////////////////////////////////
-//  HS15P�̏�����
+//  HS15Pの初期化
 ///////////////////////////////////////////////
 
 void HS15P::init(void) {
@@ -80,7 +81,7 @@ void HS15P::init(void) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
-//  HS15P�̒�R�l�Ǐo chargeTime (us) �R���f���T�[�d�� vaPin�̓ǂݏo���l(0-1023)��Ԃ��B
+//  HS15Pの抵抗値読出 chargeTime (us) コンデンサ充電後 vaPinの読み出し値(0-1023)を返す。
 ////////////////////////////////////////////////////////////////////////////////////////
 
 int HS15P::readSensor(const unsigned int chargeTime) {
@@ -89,10 +90,10 @@ int HS15P::readSensor(const unsigned int chargeTime) {
 
   init();
   remainCharge = analogRead(_vaPin);
-  /* ����O�Ɋ��S�ɕ��d����B*/
+  /* 測定前に完全に放電する。*/
   for (i = 0; i < 20; i++) {
-    pinMode(_vaPin, OUTPUT);
-    digitalWrite(_vaPin, LOW); // �דd�����΍�Ōv���p�s���������I��LOW�ɂ���B
+    pinMode(_vdPin, OUTPUT);
+    digitalWrite(_vdPin, LOW); // 荷電解消対策で計測用ピンを強制的にLOWにする。
     delay( 10 );
     pinMode(_vaPin, INPUT);
     remainCharge = analogRead(_vaPin);
@@ -106,71 +107,71 @@ int HS15P::readSensor(const unsigned int chargeTime) {
     return (9999);
   }
 
-  /* �[�d���Ԃ��w�肵�A�C���s�[�_���X���� */
+  /* 充電時間を指定し、インピーダンス測定 */
   noInterrupts();
   if ( chargeTime == 10 ) {
     digitalWrite(_vfPin, HIGH);
-    delayMicroseconds( 6 );				  // �[�d 9.4us �����A�_�~�[��R���g����delay���Ԃ𒲐�
+    delayMicroseconds( 6 );				  // 充電 9.4us だが、ダミー抵抗を使ってdelay時間を調整
     pinMode(_vfPin, INPUT);
     j = analogRead(_vaPin);
     digitalWrite(_vfPin, LOW);
     digitalWrite(_vrPin, HIGH);
-    delayMicroseconds( 6 );         // �דd�����΍�Ŕ��]�[�d���A�^���𗬉�
+    delayMicroseconds( 6 );         // 荷電解消対策で反転充電し、疑似交流化
     digitalWrite(_vrPin, LOW);
   } else if ( chargeTime == 100 ) {
     digitalWrite(_vfPin, HIGH);
-    delayMicroseconds( 94 );        // �[�d 94us �����A�_�~�[��R���g����delay���Ԃ𒲐�
+    delayMicroseconds( 94 );        // 充電 94us だが、ダミー抵抗を使ってdelay時間を調整
     pinMode(_vfPin, INPUT);
     j = analogRead(_vaPin);
     digitalWrite(_vfPin, LOW);
     digitalWrite(_vrPin, HIGH);
-    delayMicroseconds( 94 );        // �דd�����΍�Ŕ��]�[�d���A�^���𗬉�
+    delayMicroseconds( 94 );        // 荷電解消対策で反転充電し、疑似交流化
     digitalWrite(_vrPin, LOW);
   } else if ( chargeTime == 1000 ) {
     digitalWrite(_vfPin, HIGH);
-    delayMicroseconds( 990 );       // �[�d 940us �����A�_�~�[��R���g����delay���Ԃ𒲐�
+    delayMicroseconds( 990 );       // 充電 940us だが、ダミー抵抗を使ってdelay時間を調整
     pinMode(_vfPin, INPUT);
     j = analogRead(_vaPin);
     digitalWrite(_vfPin, LOW);
     digitalWrite(_vrPin, HIGH);
-    delayMicroseconds( 990 );       // �דd�����΍�Ŕ��]�[�d���A�^���𗬉�
+    delayMicroseconds( 990 );       // 荷電解消対策で反転充電し、疑似交流化
     digitalWrite(_vrPin, LOW);
   } else if ( chargeTime == 10000 ) {
     digitalWrite(_vfPin, HIGH);
-    delayMicroseconds( 10100 );     // �[�d 9.4ms �����A�_�~�[��R���g����delay���Ԃ𒲐�
+    delayMicroseconds( 10100 );     // 充電 9.4ms だが、ダミー抵抗を使ってdelay時間を調整
     pinMode(_vfPin, INPUT);
     j = analogRead(_vaPin);
     digitalWrite(_vfPin, LOW);
     digitalWrite(_vrPin, HIGH);
-    delayMicroseconds( 10100 );	    // �דd�����΍�Ŕ��]�[�d���A�^���𗬉�
+    delayMicroseconds( 10100 );	    // 荷電解消対策で反転充電し、疑似交流化
     digitalWrite(_vrPin, LOW);
   } else {
     digitalWrite(_vfPin, HIGH);
-    delay( 101 );                   // �[�d 100ms�@�͂����Ă���delay�͂����Ɠ��삷��̂�
+    delay( 101 );                   // 充電 100ms　はたしてこのdelayはちゃんと動作するのか
     pinMode(_vfPin, INPUT);
     j = analogRead(_vaPin);
     digitalWrite(_vfPin, LOW);
     digitalWrite(_vrPin, HIGH);
-    delay( 101 );                   // �דd�����΍�Ŕ��]�[�d���A�^���𗬉�
+    delay( 101 );                   // 荷電解消対策で反転充電し、疑似交流化
     digitalWrite(_vrPin, LOW);
   }
   interrupts();
-  init();                           //HS15P�̃s���������B�Ȃ������ꂪ�K�v�B
+  init();                           //HS15Pのピン初期化。なぜかこれが必要。
   return j;
 }
 
 
 ////////////////////////////////////////////////////
-//  HS15P�̒�R�l�𑪒肵�A�ϊ����Ŏ��x�Z�o���ĕԂ�
+//  HS15Pの抵抗値を測定し、変換式で湿度算出して返す
 ////////////////////////////////////////////////////
 
 float HS15P::getRh(const float temp) {
   int i, j, t;
-  float Rs;                 // HS15P�̒�R�l�i10us��j
-  float Rl;                 // HS15P�̒�R�l�i�ΐ��j
-  float rh;                 // �Z�o�������x
+  float Rs;                 // HS15Pの抵抗値（10us基準）
+  float Rl;                 // HS15Pの抵抗値（対数）
+  float rh;                 // 算出した湿度
 
-  t = 10;                   // �ŏ���10uSec�[�d�ł̑��肩��J�n����
+  t = 10;                   // 最初は10uSec充電での測定から開始する
   for (i = 0; i < 5; i++) {
     j = readSensor(t);
 #ifdef DEBUG
@@ -181,29 +182,29 @@ float HS15P::getRh(const float temp) {
     Serial.print(j);
     Serial.print(", ");
 #endif
-    if ((j == 9999) || isnan(j) || isinf(j)) {       //�R���f���T�̕��d�Ƀg���u����
+    if ((j == 9999) || isnan(j) || isinf(j)) {       //コンデンサの放電にトラブル時
       return (0);
     }
-//  �v���l���玼�x�ւ̕ϊ�
-    Rs = -(_chargeTIME10US) / CON_F / log(1.0 - (float)j / 1024.0); // �[�d���ꂽ�d������Z�o����HS15P��R�l�i10uS�����W��j
-    Rs *= _hs15pFactor;                                             // HS15P�̌̍�����
-    Rl = log10(Rs) + (float)i;                                      // �[�d���ԃ����W�␳����HS15P��R�ΐ��l
+//  計測値から湿度への変換
+    Rs = -(_chargeTIME10US) / CON_F / log(1.0 - (float)j / 1024.0); // 充電された電圧から算出したHS15P抵抗値（10uSレンジ基準）
+    Rs *= _hs15pFactor;                                             // HS15Pの個体差調整
+    Rl = log10(Rs) + (float)i;                                      // 充電時間レンジ補正したHS15P抵抗対数値
 #ifdef DEBUG
     Serial.print("Rl=");
     Serial.print(Rl, 2);
     Serial.print(", ");
 #endif
-    if ( j > AI_THRESHOLD) {  //�[�d��̓d����臒l�ȏ�Ȃ瑪��I��
+    if ( j > AI_THRESHOLD) {  //充電後の電圧が閾値以上なら測定終了
       break;
     }
-    t *= 10;                  // �[�d��̓d����臒l�ȉ��̏ꍇ�́A�[�d���ԁi�����W�j��10�{���čđ���
+    t *= 10;                  // 充電後の電圧が閾値以下の場合は、充電時間（レンジ）を10倍して再測定
   }
 
 
 #ifdef CONVERSION_1
 
-//  �f�[�^�V�[�g�̑ΐ��l����̃��j�A���e�B�␳����щ��x�␳�𕂓������_�A�R���֐��܂Ŏg���͋ƔŁB���x20���ȉ��͎g���Ȃ��B
-  if ((i < 4) or ((-0.06 * temp + 9.04) > Rl)) {            // ���x20���ȉ��͕␳�ߎ������Ή����Ă��Ȃ��B
+//  データシートの対数値からのリニアリティ補正および温度補正を浮動小数点、３次関数まで使う力業版。湿度20％以下は使えない。
+  if ((i < 4) or ((-0.06 * temp + 9.04) > Rl)) {            // 湿度20％以下は補正近似式が対応していない。
     float Pa = 0.00001373 * pow(temp, 3) - 0.001204 * pow(temp, 2) + 0.06165 * temp + 2.0327;
     float Pb = 0.0001802 * pow(temp, 3) - 0.01709 * pow(temp, 2) + 0.6645 * temp + 40.97;
     float Pc = 0.0005950 * pow(temp, 3) - 0.05359 * pow(temp, 2) + 0.8408 * temp + 221.8;
@@ -215,7 +216,7 @@ float HS15P::getRh(const float temp) {
 
 #ifdef CONVERSION_2
 
-// �O�a���@�ɂ����5�C15, 25, 35���Ŏ����������ʂ���쐬�����ϊ��� (5�̃Z���T�̏o�͑ΐ��l�̕��ϒl���g����)
+// 飽和塩法によって5，15, 25, 35℃で実測した結果から作成した変換式 (5個のセンサの出力対数値の平均値を使った)
   float Pa = -0.0025 * pow(temp, 2) + 0.097 * temp + 1.122;
   float Pb = -0.0179 * pow(temp, 2) + 0.7607 * temp + 35.147;
   float Pc = -0.0304 * pow(temp, 2) + 0.722 * temp + 204;
@@ -224,7 +225,7 @@ float HS15P::getRh(const float temp) {
 
 #ifdef CONVERSION_3
 
-// �O�a���@�ɂ����5�C15, 25, 30���Ŏ����������ʂ���쐬�����ϊ��� (�����̋߂�3�̃Z���T�̏o�͑ΐ��l�̕��ϒl���g����)
+// 飽和塩法によって5，15, 25, 30℃で実測した結果から作成した変換式 (特性の近い3個のセンサの出力対数値の平均値を使った)
   float Pa = -0.0007 * pow(temp, 2) + 0.0556 * temp + 1.2651;
   float Pb = -0.0028 * pow(temp, 2) + 0.3813 * temp + 37.031;
   float Pc = -0.0036 * pow(temp, 2) + 0.0457 * temp + 206.91;
@@ -233,13 +234,13 @@ float HS15P::getRh(const float temp) {
 
 #ifdef CONVERSION_4
 
-//  �uHS15P ���x�Z���T�[�̊ȈՓ������ Arduino�Łv(http://siesta.la.coocan.jp/zk/hs15/hs15_arduino.html)
-//  �ł̕ϊ����i�{�v���O�����ɍ��킹�邽�߁A�ꕔ�ϐ�����ύX�j
+//  「HS15P 湿度センサーの簡易動作実験 Arduino版」(http://siesta.la.coocan.jp/zk/hs15/hs15_arduino.html)
+//  での変換式（本プログラムに合わせるため、一部変数名を変更）
 
-  float R;  // HS15�̒�R�̑���l
+  float R;  // HS15の抵抗の測定値
 
-  R= Rl + temp*(0.008363*Rl + 0.007695);       //���x�␳�@       ���␳�l�̓f�[�^�V�[�g�̃O���t���ڑ��ɂĐ���
-  rh= 1.998 * R*R -40.74 *R +222.13;           //���j�A���e�B�␳ ���␳�l�̓f�[�^�V�[�g�̃O���t���ڑ��ɂĐ���
+  R= Rl + temp*(0.008363*Rl + 0.007695);       //温度補正　       ※補正値はデータシートのグラフより目測にて推定
+  rh= 1.998 * R*R -40.74 *R +222.13;           //リニアリティ補正 ※補正値はデータシートのグラフより目測にて推定
 #endif
 
 
@@ -264,7 +265,7 @@ float HS15P::getRh(const float temp) {
 
 
 ////////////////////////////////////////////////////
-//  �O���ivapor pressure deficit�j���Z�o���ĕԂ�
+//  飽差（vapor pressure deficit）を算出して返す
 ////////////////////////////////////////////////////
 
 float HS15P::getVPD(float temp, float rh) { // hPa

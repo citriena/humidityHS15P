@@ -2,14 +2,14 @@
 #include <SHthermistor.h>  // https://github.com/citriena/SHthermistor
 
 
-// HS15PÚ‘±@@D11 --- HS15P ---- A1---- 0.022uF -----D12
+// HS15Pæ¥ç¶šã€€ã€€D11 --- HS15P ---- A1(D15)---- 0.022uF -----D12
 
-// ƒT[ƒ~ƒXƒ^Ú‘±@Vdd---10kƒ¶---A0---NTC thermistor---GND
+// ã‚µãƒ¼ãƒŸã‚¹ã‚¿æ¥ç¶šã€€Vdd---10kÎ©---A0---NTC thermistor---GND
 
 
-HS15P hs15p(11, 12, 1);
+HS15P hs15p(11, 12, 1, 15);
 
-SHthermistor thermistor(0, 25, 50, 27280, 10000, 4160, 10000, 0, NTC_GND);  // SEMITECŠ”®‰ïĞ103AT-11‚Ìê‡
+SHthermistor thermistor(0, 25, 50, 27280, 10000, 4160, 10000, 0, NTC_GND);  // SEMITECæ ªå¼ä¼šç¤¾103AT-11ã®å ´åˆ
 
 void setup() {
   // put your setup code here, to run once:

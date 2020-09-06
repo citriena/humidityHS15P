@@ -3,15 +3,15 @@
 
 #include <Arduino.h>
 
-#define ANALOG_10US     362     // 1kƒ¶, 10usƒŒƒ“ƒW‚ÌƒAƒiƒƒOŒv‘ª’lB‹É—Í356‚É‹ß‚­‚È‚é‚æ‚¤‚É[“dŠÔ‚ğ’²®‚µ‚½Œ‹‰ÊA6us‚Å362‚Æ‚È‚Á‚½B
-#define CON_F           2.2e-8  // HS15P‚ÌƒCƒ“ƒs[ƒ_ƒ“ƒX‘ª’è—pƒRƒ“ƒfƒ“ƒT‚Ì—e—Êi—e—Ê‚ÌˆÀ’è‚µ‚½ƒtƒBƒ‹ƒ€ƒRƒ“ƒfƒ“ƒT“™‚ğg‚¤j0.022uF
-#define AI_THRESHOLD    128     // ¼“xƒAƒiƒƒOŒv‘ª‰ºŒÀ’l@‚±‚êˆÈ‰º‚È‚ç[“dŠÔƒŒƒ“ƒW‚ğã‚°‚éB
-#define HS15P_FACTOR    1.00    // HS15P‚ÌŒÂ‘Ì·’²®‰Šú’li0.50-1.50‚­‚ç‚¢jBƒXƒPƒbƒ`“à‚Å‚Ívoid setFactor(float factor);‚Åİ’è‰Â”\B
-                                // ÀÛ‚æ‚è¼“x‚ª‚‚­o‚éê‡‚Í’l‚ğã‚°‚éiƒCƒ“ƒs[ƒ_ƒ“ƒXŒvZ’l‚ğ‘å‚«‚­‚µAZo’l‚ğ’á¼“x‰»jB
+#define ANALOG_10US     362     // 1kÎ©, 10usãƒ¬ãƒ³ã‚¸ã®ã‚¢ãƒŠãƒ­ã‚°è¨ˆæ¸¬å€¤ã€‚æ¥µåŠ›356ã«è¿‘ããªã‚‹ã‚ˆã†ã«å……é›»æ™‚é–“ã‚’èª¿æ•´ã—ãŸçµæœã€6usã§362ã¨ãªã£ãŸã€‚
+#define CON_F           2.2e-8  // HS15Pã®ã‚¤ãƒ³ãƒ”ãƒ¼ãƒ€ãƒ³ã‚¹æ¸¬å®šç”¨ã‚³ãƒ³ãƒ‡ãƒ³ã‚µã®å®¹é‡ï¼ˆå®¹é‡ã®å®‰å®šã—ãŸãƒ•ã‚£ãƒ«ãƒ ã‚³ãƒ³ãƒ‡ãƒ³ã‚µç­‰ã‚’ä½¿ã†ï¼‰0.022uF
+#define AI_THRESHOLD    128     // æ¹¿åº¦ã‚¢ãƒŠãƒ­ã‚°è¨ˆæ¸¬ä¸‹é™å€¤ã€€ã“ã‚Œä»¥ä¸‹ãªã‚‰å……é›»æ™‚é–“ãƒ¬ãƒ³ã‚¸ã‚’ä¸Šã’ã‚‹ã€‚
+#define HS15P_FACTOR    1.00    // HS15Pã®å€‹ä½“å·®èª¿æ•´åˆæœŸå€¤ï¼ˆ0.50-1.50ãã‚‰ã„ï¼‰ã€‚ã‚¹ã‚±ãƒƒãƒå†…ã§ã¯void setFactor(float factor);ã§è¨­å®šå¯èƒ½ã€‚
+                                // å®Ÿéš›ã‚ˆã‚Šæ¹¿åº¦ãŒé«˜ãå‡ºã‚‹å ´åˆã¯å€¤ã‚’ä¸Šã’ã‚‹ï¼ˆã‚¤ãƒ³ãƒ”ãƒ¼ãƒ€ãƒ³ã‚¹è¨ˆç®—å€¤ã‚’å¤§ããã—ã€ç®—å‡ºå€¤ã‚’ä½æ¹¿åº¦åŒ–ï¼‰ã€‚
 
 class HS15P { 
 public:
-  HS15P(int vfPin, int vrPin, int vaPin); // ƒRƒ“ƒXƒgƒ‰ƒNƒ^[ // vfPin --- HS15P ---- vaPin---- capacitor -----vrPin
+  HS15P(int vfPin, int vrPin, int vaPin, int vdPin); // ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ãƒ¼ // vfPin --- HS15P ---- vaPin(vdPin)---- capacitor -----vrPin
   float getRh(float temp);
   float getVPD(float temp, float rh);
   void setFactor(float factor);
@@ -23,8 +23,9 @@ private:
   int _vfPin;
   int _vrPin;
   int _vaPin;
+  int _vdPin;
   float _hs15pFactor;
-  const float _chargeTIME10US  = -log(1.0 - ((float)ANALOG_10US / 1023.0)) * ((float)CON_F * 1000.0); //ŒvZã‚Ì[“dŠÔ
+  const float _chargeTIME10US  = -log(1.0 - ((float)ANALOG_10US / 1023.0)) * ((float)CON_F * 1000.0); //è¨ˆç®—ä¸Šã®å……é›»æ™‚é–“
 
   void init(void);
   int readSensor(unsigned int chargeTime);

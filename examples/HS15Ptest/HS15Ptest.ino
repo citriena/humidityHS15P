@@ -1,11 +1,11 @@
-// とりあえず動作確認用
-// 温度は25℃として処理
+// 縺ｨ繧翫≠縺医★蜍穂ｽ懃｢ｺ隱咲畑
+// 貂ｩ蠎ｦ縺ｯ25邃�縺ｨ縺励※蜃ｦ逅�
 
-// 接続　　D11 --- HS15P ---- A1---- 0.022uF -----D12
+// 謗･邯壹縲D11 --- HS15P ---- A1(D15)---- 0.022uF -----D12
 
 #include <HS15P.h>
 
-HS15P hs15p(11, 12, 1);
+HS15P hs15p(11, 12, 1, 15);
 
 
 void setup() {
@@ -18,4 +18,4 @@ void loop() {
   // put your main code here, to run repeatedly:
   Serial.println(hs15p.getRh(25), 1); 
   delay(1000);
-}}
+}
