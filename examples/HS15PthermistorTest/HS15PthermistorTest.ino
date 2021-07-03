@@ -1,4 +1,4 @@
-#include <HS15P.h>
+#include <HS15P.h>         // https://github.com/citriena/humidityHS15P
 #include <SHthermistor.h>  // https://github.com/citriena/SHthermistor
 
 
@@ -7,9 +7,9 @@
 // サーミスタ接続　Vdd---10kΩ---A0---NTC thermistor---GND
 
 
-HS15P hs15p(11, 12, 1, 15);
+HS15P hs15p(11, 12, A1, 15);
 
-SHthermistor thermistor(0, 25, 50, 27280, 10000, 4160, 10000, 0, NTC_GND);  // SEMITEC株式会社103AT-11の場合
+SHthermistor thermistor(0, 25, 50, 27280, 10000, 4160, 10000, A0, NTC_GND);  // SEMITEC株式会社103AT-11の場合
 
 void setup() {
   // put your setup code here, to run once:

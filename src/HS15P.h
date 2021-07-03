@@ -1,5 +1,5 @@
-#ifndef HS15P_h
-#define HS15P_h
+#ifndef _HS15P_h
+#define _HS15P_h
 
 #include <Arduino.h>
 
@@ -11,7 +11,7 @@
 
 class HS15P { 
 public:
-  HS15P(int vfPin, int vrPin, int vaPin, int vdPin); // コンストラクター // vfPin --- HS15P ---- vaPin(vdPin)---- capacitor -----vrPin
+  HS15P(int16_t vfPin, int16_t vrPin, int16_t vaPin, int16_t vdPin); // コンストラクター // vfPin --- HS15P ---- vaPin(vdPin)---- capacitor -----vrPin
   float getRh(float temp);
   float getVPD(float temp, float rh);
   void setFactor(float factor);
@@ -20,15 +20,15 @@ public:
 protected:
 
 private:
-  int _vfPin;
-  int _vrPin;
-  int _vaPin;
-  int _vdPin;
+  int16_t _vfPin;
+  int16_t _vrPin;
+  int16_t _vaPin;
+  int16_t _vdPin;
   float _hs15pFactor;
   const float _chargeTIME10US  = -log(1.0 - ((float)ANALOG_10US / 1023.0)) * ((float)CON_F * 1000.0); //計算上の充電時間
 
   void init(void);
-  int readSensor(unsigned int chargeTime);
+  int16_t readSensor(uint16_t chargeTime);
 
 };
 #endif

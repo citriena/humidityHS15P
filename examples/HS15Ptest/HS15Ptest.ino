@@ -3,9 +3,9 @@
 
 // 接続　　D11 --- HS15P ---- A1(D15)---- 0.022uF -----D12
 
-#include <HS15P.h>
+#include <HS15P.h>  // https://github.com/citriena/humidityHS15P
 
-HS15P hs15p(11, 12, 1, 15);
+HS15P hs15p(11, 12, A1, 15);
 
 
 void setup() {

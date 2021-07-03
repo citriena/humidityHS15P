@@ -4,8 +4,8 @@
  
  本ライブラリはライセンスフリーです。
 
-                               (c) 2020 citriena
-                               https://github.com/citriena/hs15p
+                               2021 citriena
+                               https://github.com/citriena/humidityHS15P
 
 再配布については下記の著作者の承諾を得る必要があります。
 （本ソフトウェアの湿度センサHS15P測定ルーチンは下記の検討結果を基にしています）
@@ -32,14 +32,13 @@
 
 #include <HS15P.h>
 
-#define CONVERSION_3
-
+#define CONVERSION_3    // 温度、HS15Pの抵抗値から湿度を算出する計算式；４種類から選択
 
 ///////////////////////////////////////////////
 //  コンストラクタ
 ///////////////////////////////////////////////
 
-HS15P::HS15P(int vfPin, int vrPin, int vaPin, int vdPin) :
+HS15P::HS15P(int16_t vfPin, int16_t vrPin, int16_t vaPin, int16_t vdPin) :
   _vfPin(vfPin), 
   _vrPin(vrPin),
   _vaPin(vaPin),
@@ -85,8 +84,8 @@ void HS15P::init(void) {
 ////////////////////////////////////////////////////////////////////////////////////////
 
 int HS15P::readSensor(const unsigned int chargeTime) {
-  int i, j;
-  int remainCharge;
+  int16_t i, j;
+  int16_t remainCharge;
 
   init();
   remainCharge = analogRead(_vaPin);
@@ -166,7 +165,7 @@ int HS15P::readSensor(const unsigned int chargeTime) {
 ////////////////////////////////////////////////////
 
 float HS15P::getRh(const float temp) {
-  int i, j, t;
+  int16_t i, j, t;
   float Rs;                 // HS15Pの抵抗値（10us基準）
   float Rl;                 // HS15Pの抵抗値（対数）
   float rh;                 // 算出した湿度
